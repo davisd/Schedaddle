@@ -1,0 +1,224 @@
+==========
+Schedaddle
+==========
+
+Schedaddle is a Python package for getting dates and times on scheduled
+intervals.
+
+For more information, see http://www.davisd.com/projects/python-schedaddle
+
+Typical Usage is as follows::
+
+    #!/usr/bin/env python
+
+    import schedaddle
+
+    schedaddle.next((2010, 1, 31), 'monthly')
+
+Author
+======
+
+David Davis <davisd@davisd.com>
+http://www.davisd.com
+
+
+API
+===
+
+The entire Schedaddle api consists of one dictionary, two date functions, and
+two generator functions.
+
+Dictionary
+----------
+
+A dictionary, KNOWN_INTERVALS is exposed by the Schedaddle API.  This dictionary
+consists of string keys representing known interval names with values as tuples
+in (year, month, day, hour, minute, second, microsecond) format.
+
+
+Date Functions
+--------------
+
+The Schedaddle API exposes two date functions
+
+next
+~~~~
+
+Get the next date/time tuple on a schedule.
+
+Keyword arguments:
+   start_date -- the date that the schedule began/begins
+
+   interval -- can be a string or a tuple.
+      If a string - valid values are defined in KNOWN_INTERVALS 
+      
+      If a tuple - (year, month, day, hour, minute, second, microsecond)
+      
+   latest -- the most recent date that the schedule ran (optional, if not
+   provided, start_date will be treated as the latest)
+
+Returns a 7 value tuple (year, month, day, hour, minute, second, microsecond)
+
+Example:
+
+   >>> import schedaddle
+   >>> schedaddle.next((2010, 1, 31), 'monthly')
+   (2010, 2, 28, 0, 0, 0, 0)
+   
+   >>> import schedaddle
+   >>> schedaddle.next((2010, 1, 31), 'monthly', latest=(2010, 3, 15))
+   (2010, 3, 31, 0, 0, 0, 0)
+
+
+next_m
+~~~~~~
+
+Get the next identifiable date/time tuple resulting from an iterable of
+schedules.
+
+Keyword arguments:
+   schedules -- an iterable of schedules
+      a single schedule is a three value tuple consisting of (identifier,
+      start_date, interval)
+   
+   latest -- the most recent date that the schedule ran (optional, if not
+   provided, start_date will be treated as the latest for each schedule)
+
+Returns a two value tuple consisting of the identifier of the matching schedule,
+and the 7 value date/time tuple.
+(identifier, (year, month, day, hour, minute, second, microsecond))
+
+Example:
+
+   >>> import schedaddle
+   >>> schedaddle.next_m([
+   ... ('first', (2010, 1, 31), 'monthly'),
+   ... ('second', (2010, 1, 31), 'weekly')])
+   ('second', (2010, 2, 7, 0, 0, 0, 0))
+
+   >>> import schedaddle
+   >>> schedaddle.next_m([
+   ... ('first', (2010, 1, 31), (0, 1, 0, 0, 0, 0, 0)),
+   ... ('second', (2010, 1, 31, 12, 30), 'weekly')],
+   ... latest=(2010, 2, 21))
+   ('first', (2010, 2, 28, 0, 0, 0, 0))
+   
+
+Generators
+----------
+
+The Schedaddle API exposes two generator functions
+
+upcoming
+~~~~~~~~
+
+Get a generator that produces upcoming date/time tuples on a schedule.
+
+Keyword arguments:
+   start_date -- the date that the schedule begain/begins
+   
+   interval -- can be a string or a tuple.
+      If a string - valid values are defined in KNOWN_INTERVALS
+      
+      If a tuple - (year, month, day, hour, minute, second, microsecond)
+      
+   latest -- the most recent date that the schedule ran (optional, 
+   if not provided, start_date will be treated as the latest)
+   
+   end_date -- the last possible date in the generator (optional)
+   
+   max_dates -- the maximum number of dates the generator should
+   return (optional)
+   
+Returns a generator that yields 7 value date/time tuples
+(year, month, day, hour, minute, second, microsecond)
+
+Notes:
+   If end_date or max_dates is not provided, there will be no end to the amount
+   of dates generated, and so it should then not be used in scenarios requiring
+   a finite number of results, such as list comprehention.
+   
+Example:
+
+   >>> import schedaddle
+   >>> g = schedaddle.upcoming((2010, 1, 31, 12, 15), 'weekly', max_dates=3)
+   >>> l = [s for s in g]
+   >>> l
+   [(2010, 2, 7, 12, 15, 0, 0), (2010, 2, 14, 12, 15, 0, 0), (2010, 2, 21, 12, 15, 0, 0)]
+
+upcoming_m
+~~~~~~~~~~
+
+Get a generator that produces upcoming, identifiable date/time tuples resulting
+from an iterable of schedules.
+
+Generate upcoming dates from an iterable of schedules.
+
+Keyword arguments:
+   schedules -- an iterable of schedules
+      a single schedule is a tuple consisting of (identifier, start_date,
+      interval)
+      
+   latest -- the most recent date that the schedule ran (optional, if not
+   provided, start_date will be treated as the latest for each schedule)
+      
+   end_date -- the last possible date in the generator (optional)
+   
+   max_dates -- the maximum number of dates the generator should
+   return (optional)
+
+Returns a generator that yields two value date/time tuples consisting of the
+identifier of the matching schedule and the 7 value date/time tuple.
+(identifier, (year, month, day, hour, minute, second, microsecond))
+
+Notes:
+   If end_date or max_dates is not provided, there will be no end to the amount
+   of dates generated, and so it should then not be used in scenarios requiring
+   a finite number of results, such as list comprehention.
+   
+Example:
+
+   >>> import schedaddle
+   >>> schedule1 = ('first',  (2010, 1, 5),  'weekly')
+   >>> schedule2 = ('second', (2007, 12, 31), 'monthly')
+   >>> g = schedaddle.upcoming_m(
+   ... (schedule1, schedule2),
+   ... latest=(2010, 1, 12))
+   >>> g.next()
+   ('first', (2010, 1, 19, 0, 0, 0, 0))
+   >>> g.next()
+   ('first', (2010, 1, 26, 0, 0, 0, 0))
+   >>> g.next()
+   ('second', (2010, 1, 31, 0, 0, 0, 0))
+
+
+Notes
+-----
+
+Arguments
+~~~~~~~~~
+
+When a *date* is accepted as an argument in a function, you may use a date or
+datetime object, or a tuple consisting of one to seven number values
+(year, month, day, hour, minute, second, microsecond).
+If using tuple and values are not provided for each of the places (eg, no second
+or microsecond as in (2010, 1, 31, 12, 30)), Schedaddle will fill in the blanks
+either with zeros or with the maximum value to end the day, whichever makes
+sense for the argument's context.
+
+When an *interval* is accepted as an argument in a function, you may use a
+string representing a known interval defined in the KNOWN_INTERVALS dictionary,
+OR you may represent an interval as a seven value tuple
+(years, months, days, hours, minutes, seconds, microseconds).
+
+
+Return Values
+~~~~~~~~~~~~~
+
+The functions *next* and *upcoming* return and yield a tuple consisting of seven
+values (year, month, day, hour, minute, second, microsecond).
+
+The functions *next_m* and *upcoming_m* return and yield a tuple consisting of
+two values.  The first value is the identifier that was passed as part of the
+schedule which was matched.  The second is a tuple consisting of seven values
+(year, month, day, hour, minute, second, microsecond).
