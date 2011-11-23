@@ -3,3 +3,6 @@ syntax: glob
 *.pyc
 /env/
 /build/
+
+MANIFEST
+/dist/
